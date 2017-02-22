@@ -29,9 +29,13 @@ cleaned_crime_data <- cleaned_crime_data %>%
   filter(Zone.Beat != "NULL")
 cleaned_crime_data <- cleaned_crime_data %>%
   filter(Census.Tract.2000 != "NULL")
+cleaned_crime_data <- cleaned_crime_data %>%
+       filter(Summary.Offense.Code != "X") # Filtering out records with invalid Summary Offense Codes
 
 cleaned_crime_data$Occurred.Time <- substr(x=cleaned_crime_data$Occurred.Date.or.Date.Range.Start, 
                                                       nchar(as.character(cleaned_crime_data$Occurred.Date.or.Date.Range.Start)) - 10,
                                                       nchar(as.character(cleaned_crime_data$Occurred.Date.or.Date.Range.Start)))
 
 # cleaned_crime_data$Occurred.Time <- strptime(cleaned_crime_data$Occurred.Time, "%H:%M:%S")
+
+
