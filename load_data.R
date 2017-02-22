@@ -38,4 +38,14 @@ cleaned_crime_data$Occurred.Time <- substr(x=cleaned_crime_data$Occurred.Date.or
 
 # cleaned_crime_data$Occurred.Time <- strptime(cleaned_crime_data$Occurred.Time, "%H:%M:%S")
 
+crime_count_offensecode <- cleaned_crime_data %>%
+  group_by(Summary.Offense.Code) %>%
+  summarise(count= n()) %>%
+  arrange(desc(count))
+# Counting the total number of crimes for each Summary Offense Code
 
+
+crime_by_month<-cleaned_crime_data %>%
+  group_by(Month) %>%
+  summarise(count=n())
+# Counting the total number of crimes according to the month
