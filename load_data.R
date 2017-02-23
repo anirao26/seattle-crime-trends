@@ -102,5 +102,47 @@ hist.code.2400 <- cleaned_crime_data %>%
 hist(hist.code.2400$Month, xlab = "Months", main = "Histogram of Crime - Theft for year 2016")
 
 
+library(sqldf)
+library(ggplot2)
+#Zone
+ggplot(data=cleaned_crime_data, aes(cleaned_crime_data$Zone.Beat)) + geom_histogram(stat = "count")
 
+zone_wise_crime_count <- cleaned_crime_data %>%
+  group_by(Zone.Beat) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count))
+  
+mean(zone_wise_crime_count$count)
+sd(zone_wise_crime_count$count)
 
+time_zone_data <- read.csv("timeZones.csv")
+
+#Time of the day
+formatted_times <- format(strptime(cleaned_crime_data$Occurred.Time, "%I:%M:%S %p"), format = "%H:%M:%S")
+df <- as.data.frame(formatted_times)
+df$formatted_times_numeric <- as.numeric(as.POSIXct(formatted_times, format = "%H:%M:%S"))
+time_zone_data$start_time <- as.POSIXct(as.character(time_zone_data$start_time), format = "%H:%M:%S")
+time_zone_data$end_time <- as.POSIXct(as.character(time_zone_data$end_time), format = "%H:%M:%S")
+
+time_zone_data$start_time_numeric <- as.numeric(time_zone_data$start_time)
+time_zone_data$end_time_numeric <- as.numeric(time_zone_data$end_time)
+
+time_join_df <- sqldf("select * from df
+                                inner join time_zone_data 
+                                on df.formatted_times_numeric >= time_zone_data.start_time_numeric
+                                and df.formatted_times_numeric < time_zone_data.end_time_numeric")
+
+time_join_df_clean <- time_join_df %>%
+                      select(formatted_times, periodId, start_time, end_time, Desc)
+
+ggplot(data=time_join_df_clean, aes(periodId)) + geom_histogram()
+
+time_wise_crime_count <- time_join_df_clean %>%
+  group_by(periodId) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count)) %>%
+  inner_join(time_zone_data, by = "periodId") %>%
+  select(Desc, count)
+
+mean(time_wise_crime_count$count)
+sd(time_wise_crime_count$count)
