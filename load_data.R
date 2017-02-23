@@ -90,7 +90,7 @@ min.max.offense2300 <- cleaned_crime_data %>%
   arrange(desc(count_minmax))
 
 mean(min.max.offense2300$count_minmax)
-# In 2016, 1771.167 thefts including car prowl, shoplift, building, etc. have occurred in Seattle per month. 
+# In 2016, 1771.167 thefts including car prowl, shoplift, building, etc. occurred in Seattle per month. 
 sd(min.max.offense2300$count_minmax)
 
 min.max.offense2200 <- cleaned_crime_data %>%
@@ -100,7 +100,7 @@ min.max.offense2200 <- cleaned_crime_data %>%
   arrange(desc(count_minmax))
 
 mean(min.max.offense2200$count_minmax)
-# In 2016, 864.5 burglaries have occurred in Seattle per month. 
+# In 2016, 864.5 burglaries occurred in Seattle per month. 
 sd(min.max.offense2200$count_minmax)
 
 min.max.offense2400 <- cleaned_crime_data %>%
@@ -110,7 +110,7 @@ min.max.offense2400 <- cleaned_crime_data %>%
   arrange(desc(count_minmax))
 
 mean(min.max.offense2400$count_minmax)
-# In 2016, 587.8 vehicle thefts have occurred in Seattle per month. 
+# In 2016, 587.8 vehicle thefts occurred in Seattle per month. 
 sd(min.max.offense2400$count_minmax)
 
 #Plotting histogram for the top three crimes in Seattle for 2016
@@ -119,13 +119,32 @@ crime.data.2300 <- cleaned_crime_data %>%
   filter(Summary.Offense.Code == 2300)
 hist(crime.data.2300$Month, xlab = "Months", main = "Histogram of Crime - Theft (Car prowl, shoplift, building, etc.) for year 2016")
 
+plot(y = min.max.offense2300$count_minmax, x = min.max.offense2300$Month, xlab = "Month", ylab = "Count of Thefts", 
+     main = "Number of Thefts vs Month")
+mod.2300.month <- lm(formula = min.max.offense2300$count_minmax ~ min.max.offense2300$Month, data = min.max.offense2300)
+summary(mod.2300.month)
+# p-value = 0.00031 implies statistical significance
+
 crime.data.2200 <- cleaned_crime_data %>%
   filter(Summary.Offense.Code == 2200)
 hist(crime.data.2200$Month, xlab = "Months", main = "Histogram of Crime - Burglary for year 2016")
 
+plot(y = min.max.offense2200$count_minmax, x = min.max.offense2200$Month, xlab = "Month", ylab = "Count of Burglaries", 
+     main = "Number of Burglaries vs Month")
+mod.2200.month <- lm(formula = min.max.offense2200$count_minmax ~ min.max.offense2200$Month, data = min.max.offense2200)
+summary(mod.2200.month)
+# p-value = 0.000323 implies statistical significance
+
+
 crime.data.2400 <- cleaned_crime_data %>%
   filter(Summary.Offense.Code == 2400)
 hist(crime.data.2400$Month, xlab = "Months", main = "Histogram of Crime - Vehicle Theft for year 2016")
+
+plot(y = min.max.offense2400$count_minmax, x = min.max.offense2400$Month, xlab = "Month", ylab = "Count of Vehicle Thefts", 
+     main = "Number of Vehicle Thefts vs Month")
+mod.2400.month <- lm(formula = min.max.offense2400$count_minmax ~ min.max.offense2400$Month, data = min.max.offense2400)
+summary(mod.2400.month)
+# p-value = 0.000527 implies statistical significance
 
 
 
@@ -161,9 +180,14 @@ time_wise_crime_count <- time_join_df_clean %>%
   group_by(periodId) %>%
   summarise(count = n()) %>%
   arrange(desc(count)) %>%
-  inner_join(time_zone_data, by = "periodId") %>%
-  select(Desc, count)
+  inner_join(time_zone_data, by = "periodId")
 
 mean(time_wise_crime_count$count)
 sd(time_wise_crime_count$count)
+plot(y = time_wise_crime_count$count, x= time_wise_crime_count$periodId, xlab = "Time of day",
+     ylab = "Number of criminal activities", main = "Number of criminal activities vs time of the day")
+mod.crime.time <- lm (formula = time_wise_crime_count$count ~ time_wise_crime_count$periodId, 
+                      data = time_wise_crime_count)
+summary(mod.crime.time)
 # Most of the criminal activities occur during the latter half of the day (12 p.m. to around 2 a.m)
+# p-value = 0.00618 implies statistical significance
