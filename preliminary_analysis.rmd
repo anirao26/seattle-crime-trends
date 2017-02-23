@@ -1,0 +1,57 @@
+---
+title: "seattle-trends-markdown"
+author: "Karan Murthy"
+date: "23 February 2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r, echo=FALSE}
+library(ggmap)
+library(sqldf)
+library(ggplot2)
+library(dplyr)
+```
+
+```{r}
+crime_data <- read.csv("Seattle_Police_Department_Police_Report_Incident.csv")
+cleaned_crime_data <- crime_data %>%
+  filter(Year == 2016)
+cleaned_crime_data <- cleaned_crime_data %>%
+  filter(Offense.Code != "X")
+cleaned_crime_data <- cleaned_crime_data %>%
+  filter(District.Sector != "NULL")
+cleaned_crime_data <- cleaned_crime_data %>%
+  filter(Zone.Beat != "NULL")
+cleaned_crime_data <- cleaned_crime_data %>%
+  filter(Census.Tract.2000 != "NULL")
+cleaned_crime_data <- cleaned_crime_data %>%
+  filter(Summary.Offense.Code != "X") # Filtering out records with invalid Summary Offense Codes
+
+cleaned_crime_data$Occurred.Time <- substr(x=cleaned_crime_data$Occurred.Date.or.Date.Range.Start, 
+                    nchar(as.character(cleaned_crime_data$Occurred.Date.or.Date.Range.Start)) - 10,
+                    nchar(as.character(cleaned_crime_data$Occurred.Date.or.Date.Range.Start)))
+
+```
+
+The following code finds the total number of crimes pertaining to each Summary  
+Offense Code:
+```{r}
+crime_count_offensecode <- cleaned_crime_data %>%
+  group_by(Summary.Offense.Code) %>%
+  summarise(count= n()) %>%
+  arrange(desc(count))
+
+print(crime_count_offensecode)
+```
+We get 27 unique crimes as per the Summary Offense Code.  
+The top 3 crimes according to the number of incidence rates are as follows:  
+1)  Offense code: 2300; Description: Thefts including car prowl, shoplift, building, etc; Count: 21254  
+2)  Offense code: 2200; Description: Burglary; Count: 10374  
+3)  Offense code:2400; Description: Vehicle thefts; Count: 7054  
+
