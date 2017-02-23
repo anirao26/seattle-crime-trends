@@ -48,7 +48,7 @@ crime_count_offensecode <- cleaned_crime_data %>%
   group_by(Summary.Offense.Code) %>%
   summarise(count= n()) %>%
   arrange(desc(count))
-  
+
 print(crime_count_offensecode)
 # We get 27 unique crimes as per the Summary Offense Code. The top 5 crimes according to the number of incidence rates are as follows: 
 #1  2300 21254
@@ -78,14 +78,7 @@ crime_by_zone<-cleaned_crime_data %>%
   arrange(desc(count))
 
 print(crime_by_zone)
- # We find that Zone M2 has the highest occurences of crimes(2427) and Zone 99 has the lowest number of crimes(1)
-
-
-#Finding top three Offense using summary offense code occuring in Seattle in 2016
-cleaned_crime_data %>%
-  group_by(Summary.Offense.Code) %>%
-  summarise(count_offense = n()) %>%
-  arrange(desc(count_offense))
+# We find that Zone M2 has the highest occurences of crimes(2427) and Zone 99 has the lowest number of crimes(1)
 
 
 # Finding Min/max/mean/sd of top three types of Crimes
@@ -139,13 +132,8 @@ hist(crime.data.2400$Month, xlab = "Months", main = "Histogram of Crime - Vehicl
 #Zone
 ggplot(data=cleaned_crime_data, aes(cleaned_crime_data$Zone.Beat)) + geom_histogram(stat = "count")
 
-zone_wise_crime_count <- cleaned_crime_data %>%
-  group_by(Zone.Beat) %>%
-  summarise(count = n()) %>%
-  arrange(desc(count))
-
-mean(zone_wise_crime_count$count)
-sd(zone_wise_crime_count$count)
+mean(crime_by_zone$count)
+sd(crime_by_zone$count)
 
 time_zone_data <- read.csv("timeZones.csv")
 
@@ -178,3 +166,4 @@ time_wise_crime_count <- time_join_df_clean %>%
 
 mean(time_wise_crime_count$count)
 sd(time_wise_crime_count$count)
+# Most of the criminal activities occur during the latter half of the day (12 p.m. to around 2 a.m)
