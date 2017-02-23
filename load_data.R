@@ -49,3 +49,58 @@ crime_by_month<-cleaned_crime_data %>%
   group_by(Month) %>%
   summarise(count=n())
 # Counting the total number of crimes according to the month
+
+
+#Finding top three Offense using summary offense code occuring in Seattle in 2016
+cleaned_crime_data %>%
+  group_by(Summary.Offense.Code) %>%
+  summarise(count_offense = n()) %>%
+  arrange(desc(count_offense))
+
+
+# Finding Min/max/mean/sd of top three types of Crimes
+
+min.max.offense2300 <- cleaned_crime_data %>%
+  group_by(Month) %>%
+  filter(Summary.Offense.Code == 2300) %>%
+  summarise(count_minmax = n()) %>%
+  arrange(desc(count_minmax))
+
+mean(min.max.offense2300$count_minmax)
+sd(min.max.offense2300$count_minmax)
+
+min.max.offense2200 <- cleaned_crime_data %>%
+  group_by(Month) %>%
+  filter(Summary.Offense.Code == 2200) %>%
+  summarise(count_minmax = n()) %>%
+  arrange(desc(count_minmax))
+
+mean(min.max.offense2200$count_minmax)
+sd(min.max.offense2200$count_minmax)
+
+min.max.offense2400 <- cleaned_crime_data %>%
+  group_by(Month) %>%
+  filter(Summary.Offense.Code == 2400) %>%
+  summarise(count_minmax = n()) %>%
+  arrange(desc(count_minmax))
+
+mean(min.max.offense2400$count_minmax)
+sd(min.max.offense2400$count_minmax)
+
+#Plotting histogram for the top three crimes in Seattle for 2016
+
+hist.code.2300 <- cleaned_crime_data %>%
+  filter(Summary.Offense.Code == 2300)
+hist(hist.code.2300$Month, xlab = "Months", main = "Histogram of Crime - ?? for year 2016")
+
+hist.code.2200 <- cleaned_crime_data %>%
+  filter(Summary.Offense.Code == 2200)
+hist(hist.code.2200$Month, xlab = "Months", main = "Histogram of Crime - Burglary for year 2016")
+
+hist.code.2400 <- cleaned_crime_data %>%
+  filter(Summary.Offense.Code == 2400)
+hist(hist.code.2400$Month, xlab = "Months", main = "Histogram of Crime - Theft for year 2016")
+
+
+
+
