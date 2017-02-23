@@ -41,22 +41,45 @@ cleaned_crime_data$Occurred.Time <- substr(x=cleaned_crime_data$Occurred.Date.or
 
 # cleaned_crime_data$Occurred.Time <- strptime(cleaned_crime_data$Occurred.Time, "%H:%M:%S")
 
+
+# The following code finds the total number of crimes pertaining to each Summary 
+# Offense Code:
 crime_count_offensecode <- cleaned_crime_data %>%
   group_by(Summary.Offense.Code) %>%
   summarise(count= n()) %>%
   arrange(desc(count))
-# Counting the total number of crimes for each Summary Offense Code
-#1                 2300 21254
-#2                 2200 10374
-#3                 2400  7054
-#4                 1300  5758
+  
+print(crime_count_offensecode)
+# We get 27 unique crimes as per the Summary Offense Code. The top 5 crimes according to the number of incidence rates are as follows: 
+#1  2300 21254
+#2  2200 10374
+#3  2400  7054
+#4  1300  5758
+
+# The top 5 crimes have been committed 48127 times which is roughly thrice the number of incidences of the remaining 22 crimes, 
+# which total 16194.
 
 
+# The following code finds the total number of crimes per month:
 crime_by_month<-cleaned_crime_data %>%
   group_by(Month) %>%
   summarise(count=n())
-# Counting the total number of crimes according to the month
-# Number of criminal activities are more in the latter part of the year (July - December)
+
+print(crime_by_month)
+
+# November has the highest number of crimes: 14762 whereas, January has the lowest number of crimes: 248. From the month-wise 
+# crime distribution, we can see that there is a drastic change in the number of crimes from August to September. It's apparent
+# that the number of crimes increase towards the end of the year, with a peak in November.
+
+# The following code finds the total number of crimes in each zone:
+crime_by_zone<-cleaned_crime_data %>%
+  group_by(Zone.Beat) %>%
+  summarise(count=n()) %>%
+  arrange(desc(count))
+
+print(crime_by_zone)
+ # We find that Zone M2 has the highest occurences of crimes(2427) and Zone 99 has the lowest number of crimes(1)
+
 
 #Finding top three Offense using summary offense code occuring in Seattle in 2016
 cleaned_crime_data %>%
