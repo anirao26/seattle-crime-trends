@@ -19,6 +19,7 @@ library(dplyr)
 ```
 
 ```{r}
+
 crime_data <- read.csv("Seattle_Police_Department_Police_Report_Incident.csv")
 cleaned_crime_data <- crime_data %>%
   filter(Year == 2016)
@@ -41,6 +42,7 @@ cleaned_crime_data$Occurred.Time <- substr(x=cleaned_crime_data$Occurred.Date.or
 
 The following code finds the total number of crimes pertaining to each Summary  
 Offense Code:
+
 ```{r}
 crime_count_offensecode <- cleaned_crime_data %>%
   group_by(Summary.Offense.Code) %>%
@@ -49,6 +51,7 @@ crime_count_offensecode <- cleaned_crime_data %>%
 
 print(crime_count_offensecode)
 ```
+
 We get 27 unique crimes as per the Summary Offense Code.  
 The top 3 crimes according to the number of incidence rates are as follows:  
 1)  Offense code: 2300; Description: Thefts including car prowl, shoplift, building, etc; Count: 21254  
@@ -57,6 +60,7 @@ The top 3 crimes according to the number of incidence rates are as follows:
 The top 5 crimes have been committed 48127 times which is roughly thrice the number of incidences of the remaining 22 crimes, which total 16194.  
 
 The following code finds the total number of crimes per month:
+
 ```{r}
 crime_by_month<-cleaned_crime_data %>%
   group_by(Month) %>%
@@ -64,9 +68,11 @@ crime_by_month<-cleaned_crime_data %>%
 
 print(crime_by_month)
 ```  
+
 November has the highest number of crimes: 14762 whereas, January has the lowest number of crimes: 248. From the month-wise crime distribution, we can see that there is a drastic change in the number of crimes from August to September. It's apparent that the number of crimes increase towards the end of the year, with a peak in November.  
 
 The following code finds the total number of crimes in each zone:  
+
 ```{r}
 crime_by_zone<-cleaned_crime_data %>%
   group_by(Zone.Beat) %>%
@@ -75,9 +81,11 @@ crime_by_zone<-cleaned_crime_data %>%
 
 print(crime_by_zone)
 ```
+
 We find that Zone M2 has the highest occurences of crimes(2427) and Zone 99 has the lowest number of crimes(1)  
 
 Finding Min/max/mean/sd of top three types of Crimes  
+
 ```{r}
 min.max.offense2300 <- cleaned_crime_data %>%
   group_by(Month) %>%
@@ -86,18 +94,26 @@ min.max.offense2300 <- cleaned_crime_data %>%
   arrange(desc(count_minmax))
 
 mean(min.max.offense2300$count_minmax)
+
 ```  
+
 In 2016, 1771.167 thefts including car prowl, shoplift, building, etc. occurred in Seattle per month. 
+
 ```{r}
+
 sd(min.max.offense2300$count_minmax)
+
 min.max.offense2200 <- cleaned_crime_data %>%
   group_by(Month) %>%
   filter(Summary.Offense.Code == 2200) %>%
   summarise(count_minmax = n()) %>%
   arrange(desc(count_minmax))
 mean(min.max.offense2200$count_minmax)
+
 ```
+
 In 2016, 864.5 burglaries occurred in Seattle per month.  
+
 ```{r}
 sd(min.max.offense2200$count_minmax)
 
@@ -109,56 +125,105 @@ min.max.offense2400 <- cleaned_crime_data %>%
 
 mean(min.max.offense2400$count_minmax)
 ```
+
 In 2016, 587.8 vehicle thefts occurred in Seattle per month. 
+
 ```{r}
 sd(min.max.offense2400$count_minmax)
 ```
+
 Plotting histogram for the top three crimes in Seattle for 2016  
+
 ```{r}
+
 crime.data.2300 <- cleaned_crime_data %>%
   filter(Summary.Offense.Code == 2300)
-ggplot(data=crime.data.2300, aes(crime.data.2300$Month)) + xlab("Month") + geom_histogram(stat = "count") + ggtitle("Histogram of Theft (Car prowl, shoplift, building, etc.) for the year 2016")
+
+ggplot(data=crime.data.2300, aes(crime.data.2300$Month)) + 
+  xlab("Month") + 
+  geom_histogram(stat = "count") + 
+  ggtitle("Histogram of Theft (Car prowl, shoplift, building, etc.) for the year 2016")
 
 
-plot(y = log(min.max.offense2300$count_minmax), x = min.max.offense2300$Month, xlab = "Month", ylab = "Count of Thefts", 
-     main = "Number of Thefts vs Month")
+ggplot(data = min.max.offense2300, aes(x = min.max.offense2300$Month,y = log(min.max.offense2300$count_minmax))) + 
+  geom_point() +
+  xlab("Month") + 
+  ylab("Log of number of Thefts") + 
+  ggtitle("Log of number of Thefts vs Month") + 
+  geom_smooth(method = "lm")
+
 mod.2300.month <- lm(formula = log(min.max.offense2300$count_minmax) ~ min.max.offense2300$Month, data = min.max.offense2300)
+
 summary(mod.2300.month)
 ```
+
 p-value = 4.67e-07 implies statistical significance  
+
 ```{r}
+
 crime.data.2200 <- cleaned_crime_data %>%
   filter(Summary.Offense.Code == 2200)
-ggplot(data=crime.data.2200, aes(crime.data.2200$Month)) + xlab("Month") + geom_histogram(stat = "count") + ggtitle("Histogram of Burglary for the year 2016")
 
-plot(y = log(min.max.offense2200$count_minmax), x = min.max.offense2200$Month, xlab = "Month", ylab = "Count of Burglaries", 
-     main = "Number of Burglaries vs Month")
+ggplot(data=crime.data.2200, aes(crime.data.2200$Month)) + 
+  xlab("Month") + 
+  geom_histogram(stat = "count") + 
+  ggtitle("Histogram of Burglary for the year 2016")
+
+ggplot(data = min.max.offense2200, aes(x = min.max.offense2200$Month,y = log(min.max.offense2200$count_minmax))) + geom_point() +
+   xlab("Month") + ylab("Log of number of Burglaries") + ggtitle("Log of number of Burglaries vs Month") + geom_smooth(method = "lm")
 mod.2200.month <- lm(formula = log(min.max.offense2200$count_minmax) ~ min.max.offense2200$Month, data = min.max.offense2200)
 summary(mod.2200.month)
 ```
+
 p-value = 1.72e-07 implies statistical significance
+
 ```{r}
+
 crime.data.2400 <- cleaned_crime_data %>%
   filter(Summary.Offense.Code == 2400)
-ggplot(data=crime.data.2400, aes(crime.data.2400$Month)) + xlab("Month") + geom_histogram(stat = "count") + ggtitle("Histogram of Vehicle Theft for the year 2016")
 
-plot(y = log(min.max.offense2400$count_minmax), x = min.max.offense2400$Month, xlab = "Month", ylab = "Count of Vehicle Thefts", 
-     main = "Number of Vehicle Thefts vs Month")
+ggplot(data=crime.data.2400, aes(crime.data.2400$Month)) + 
+  xlab("Month") + 
+  geom_histogram(stat = "count") + 
+  ggtitle("Histogram of Vehicle Theft for the year 2016")
+
+ggplot(data = min.max.offense2400, aes(x = min.max.offense2400$Month,y = log(min.max.offense2400$count_minmax))) + 
+  geom_point() +
+  xlab("Month") + 
+  ylab("Log of number of Vehicle Thefts") + 
+  ggtitle("Log of number of Vehicle Thefts vs Month") + 
+  geom_smooth(method = "lm")
+
 mod.2400.month <- lm(formula = log(min.max.offense2400$count_minmax) ~ min.max.offense2400$Month, data = min.max.offense2400)
 summary(mod.2400.month)
 ```
+
 p-value = 2.02e-06 implies statistical significance  
 Plotting zone wise crime data.
+
 ```{r, warning=FALSE}
-ggplot(data=cleaned_crime_data, aes(cleaned_crime_data$Zone.Beat)) + xlab("Zone") + geom_histogram(stat = "count")
+
+ggplot(data=cleaned_crime_data, aes(cleaned_crime_data$Zone.Beat)) + 
+  geom_histogram(stat = "count") + 
+  xlab("Zone") +
+  ylab("Number of crimes") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ggtitle("Zone wise distribution of crimes")
+
 mean(crime_by_zone$count)
 sd(crime_by_zone$count)
+
 ```
+
 Analysing variation of crime with respect to time of the day.  
+
 ```{r warning=FALSE}
-time_zone_data <- read.csv("timeZones.csv")
+
+
 
 #Time of the day
+
+time_zone_data <- read.csv("timeZones.csv")
 formatted_times <- format(strptime(cleaned_crime_data$Occurred.Time, "%I:%M:%S %p"), format = "%H:%M:%S")
 df <- as.data.frame(formatted_times)
 df$formatted_times_numeric <- as.numeric(as.POSIXct(formatted_times, format = "%H:%M:%S"))
@@ -176,7 +241,12 @@ time_join_df <- sqldf("select * from df
 time_join_df_clean <- time_join_df %>%
   select(formatted_times, periodId, start_time, end_time, Desc)
 
-ggplot(data=time_join_df_clean, aes(periodId)) + geom_histogram()
+ggplot(time_join_df_clean, aes(factor(Desc, levels = c("12 AM to 2 AM", "2 AM to 4 AM", "4 AM to 6 AM", "6 AM to 8 AM", "8 AM to 10 AM", "10 AM to 12 PM", "12 PM to 2 PM", "2 PM to 4 PM", "4 PM to 6 PM", "6 PM to 8 PM", "8 PM to 10 PM", "10 PM to midnight")))) +
+    xlab("Time of the day") +
+    ylab("Number of crimes") +
+    ggtitle("Distribution crimes across different times of the day") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    geom_bar()
 
 time_wise_crime_count <- time_join_df_clean %>%
   group_by(periodId) %>%
@@ -186,9 +256,51 @@ time_wise_crime_count <- time_join_df_clean %>%
 
 mean(time_wise_crime_count$count)
 sd(time_wise_crime_count$count)
-plot(y = time_wise_crime_count$count, x= time_wise_crime_count$periodId, xlab = "Time of day",
-     ylab = "Number of criminal activities", main = "Number of criminal activities vs time of the day")
-mod.crime.time <- lm (formula = time_wise_crime_count$count ~ time_wise_crime_count$periodId, 
-                      data = time_wise_crime_count)
+
+mod.crime.time <- lm (formula = time_wise_crime_count$count ~ time_wise_crime_count$periodId, data = time_wise_crime_count)
+
+ggplot(data = time_wise_crime_count, aes(x = periodId,y = count)) + 
+  geom_point() +
+  xlab("Number of criminal activities vs time of the day") + 
+  ylab("Number of criminal activities") + 
+  ggtitle("Distribution of crime across different times of the day") + geom_smooth(method = "lm")
+
 summary(mod.crime.time)
+
 ```
+
+
+
+**Salient features and obvious trends in data**
+
+**1.	Number of crimes vs month of occurrence**
+
+On investigating the histograms of the top three crimes including theft, burglaries, and vehicle theft, it can be observed that the number of criminal activities are more in the latter half of the year (July – December). The drastic increase in the number of crimes is an aspect of our dataset that needs further analysis. After performing a linear regression over each of these three crimes vs month, it can be observed that as month increases, the number of crimes also increases. The p-value is less than 0.05 in each of these cases implying statistical significance.
+
+**2.	Number of crimes vs location of occurrence**
+
+After investigating the histogram of the number of crimes vs the zone in which the crime occurred, no obvious trends are visible. This implies that the location may not be a factor in influencing crime.
+
+**3.	Number of crimes vs Time of the day**
+
+After investigating the histogram of the number of crimes vs time of the day in which the crime occurred, it can be observed that most of the criminal activities occur during the latter half of the day (12 p.m. to around 2 a.m.) Barring 12 a.m. to 2 a.m. where the criminal activities were high, the number of criminal activities increases as the day progresses. This might imply that criminal activities are better facilitated in absence of natural light. A p value less than 0.05 indicates that time of the day may be a statistically significant variable in determining whether a criminal activity would take place. Scope for bias
+
+ 
+
+**Next steps:**
+
+1. Merge the housing dataset from Zillow with the original crime dataset by matching location coordinates (latitude, longitude).
+
+2. Merge the crime dataset with the dataset related to public schools in Seattle.
+
+3. Test the hypothesis to find the relationship between the top 3 crimes in Seattle with housing prices in Seattle.
+
+4. Test the hypothesis to find the relationship between the top 3 crimes in Seattle with the presence of schools in the particular area where these top 3 crimes were committed.
+
+5. Apply regression techniques to find the associations between the top 3 crimes in Seattle with the housing prices in Seattle.
+
+6. Apply regression techniques to find the associations between the top 3 crimes in Seattle with the presence of schools across neighborhoods in Seattle.
+
+7. Time series analysis of the top 3 crimes with the time of the day.
+
+8. Time series analysis of the top 3 crimes with months of year 2016.
