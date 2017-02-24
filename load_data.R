@@ -149,7 +149,12 @@ summary(mod.2400.month)
 
 
 #Zone
-ggplot(data=cleaned_crime_data, aes(cleaned_crime_data$Zone.Beat)) + geom_histogram(stat = "count")
+ggplot(data=cleaned_crime_data, aes(cleaned_crime_data$Zone.Beat)) + 
+  geom_histogram(stat = "count") + 
+  xlab("Zone") +
+  ylab("Number of crimes") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("Zone wise distribution of crimes")
 
 mean(crime_by_zone$count)
 sd(crime_by_zone$count)
