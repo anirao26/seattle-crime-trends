@@ -119,32 +119,32 @@ crime.data.2300 <- cleaned_crime_data %>%
   filter(Summary.Offense.Code == 2300)
 hist(crime.data.2300$Month, xlab = "Months", main = "Histogram of Crime - Theft (Car prowl, shoplift, building, etc.) for year 2016")
 
-plot(y = min.max.offense2300$count_minmax, x = min.max.offense2300$Month, xlab = "Month", ylab = "Count of Thefts", 
+plot(y = log(min.max.offense2300$count_minmax), x = min.max.offense2300$Month, xlab = "Month", ylab = "Count of Thefts", 
      main = "Number of Thefts vs Month")
-mod.2300.month <- lm(formula = min.max.offense2300$count_minmax ~ min.max.offense2300$Month, data = min.max.offense2300)
+mod.2300.month <- lm(formula = log(min.max.offense2300$count_minmax) ~ min.max.offense2300$Month, data = min.max.offense2300)
 summary(mod.2300.month)
-# p-value = 0.00031 implies statistical significance
+# p-value = 4.67e-07 implies statistical significance
 
 crime.data.2200 <- cleaned_crime_data %>%
   filter(Summary.Offense.Code == 2200)
 hist(crime.data.2200$Month, xlab = "Months", main = "Histogram of Crime - Burglary for year 2016")
 
-plot(y = min.max.offense2200$count_minmax, x = min.max.offense2200$Month, xlab = "Month", ylab = "Count of Burglaries", 
+plot(y = log(min.max.offense2200$count_minmax), x = min.max.offense2200$Month, xlab = "Month", ylab = "Count of Burglaries", 
      main = "Number of Burglaries vs Month")
-mod.2200.month <- lm(formula = min.max.offense2200$count_minmax ~ min.max.offense2200$Month, data = min.max.offense2200)
+mod.2200.month <- lm(formula = log(min.max.offense2200$count_minmax) ~ min.max.offense2200$Month, data = min.max.offense2200)
 summary(mod.2200.month)
-# p-value = 0.000323 implies statistical significance
+# p-value = 1.72e-07 implies statistical significance
 
 
 crime.data.2400 <- cleaned_crime_data %>%
   filter(Summary.Offense.Code == 2400)
 hist(crime.data.2400$Month, xlab = "Months", main = "Histogram of Crime - Vehicle Theft for year 2016")
 
-plot(y = min.max.offense2400$count_minmax, x = min.max.offense2400$Month, xlab = "Month", ylab = "Count of Vehicle Thefts", 
+plot(y = log(min.max.offense2400$count_minmax), x = min.max.offense2400$Month, xlab = "Month", ylab = "Count of Vehicle Thefts", 
      main = "Number of Vehicle Thefts vs Month")
-mod.2400.month <- lm(formula = min.max.offense2400$count_minmax ~ min.max.offense2400$Month, data = min.max.offense2400)
+mod.2400.month <- lm(formula = log(min.max.offense2400$count_minmax) ~ min.max.offense2400$Month, data = min.max.offense2400)
 summary(mod.2400.month)
-# p-value = 0.000527 implies statistical significance
+# p-value = 2.02e-06 implies statistical significance
 
 
 
