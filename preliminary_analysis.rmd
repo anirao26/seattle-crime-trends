@@ -1,6 +1,6 @@
 ---
-title: "seattle-trends-markdown"
-author: "Karan Murthy"
+title: "Analysis of crime trends in Seattle"
+author: "Group 5"
 date: "23 February 2017"
 output: pdf_document
 ---
