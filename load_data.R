@@ -174,7 +174,12 @@ time_join_df <- sqldf("select * from df
 time_join_df_clean <- time_join_df %>%
   select(formatted_times, periodId, start_time, end_time, Desc)
 
-ggplot(data=time_join_df_clean, aes(periodId)) + geom_histogram()
+ggplot(time_join_df_clean, aes(factor(Desc, levels = c("12 AM to 2 AM", "2 AM to 4 AM", "4 AM to 6 AM", "6 AM to 8 AM", "8 AM to 10 AM", "10 AM to 12 PM", "12 PM to 2 PM", "2 PM to 4 PM", "4 PM to 6 PM", "6 PM to 8 PM", "8 PM to 10 PM", "10 PM to midnight")))) + 
+    xlab("Time of the day") +
+    ylab("Number of crimes") +
+    ggtitle("Distribution crimes across different times of the day") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    geom_bar()
 
 time_wise_crime_count <- time_join_df_clean %>%
   group_by(periodId) %>%
