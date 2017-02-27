@@ -3,7 +3,7 @@ library(maps)
 library(maptools)
 library(rgdal)
 library(dplyr)
-crime_data <- read.csv("seattle-crime-trends/Seattle_Police_Department_Police_Report_Incident.csv")
+crime_data <- read.csv("Data/Seattle_Police_Department_Police_Report_Incident.csv")
 cleaned_crime_data <- crime_data %>%
   filter(Year == 2016)
 cleaned_crime_data <- cleaned_crime_data %>%
@@ -21,7 +21,7 @@ cleaned_crime_data$Occurred.Time <- substr(x=cleaned_crime_data$Occurred.Date.or
                                            nchar(as.character(cleaned_crime_data$Occurred.Date.or.Date.Range.Start)) - 10,
                                            nchar(as.character(cleaned_crime_data$Occurred.Date.or.Date.Range.Start)))
 
-neighborhoods_map <- readOGR(dsn = "Neighborhoods/StatePlane", layer = "Neighborhoods")
+neighborhoods_map <- readOGR(dsn = "Neighborhoods", layer = "Neighborhoods")
 
 #Converting columns Longitude and Latitude into spatial coordinates.
 coordinates(cleaned_crime_data) <- ~Longitude+Latitude
