@@ -50,8 +50,31 @@ cleaned_crime_data[cleaned_crime_data$L_HOOD == "NO BROADER TERM",]$L_HOOD <-
   toupper(cleaned_crime_data[cleaned_crime_data$L_HOOD == "NO BROADER TERM",]$S_HOOD)
 
 unique(cleaned_crime_data$L_HOOD)
+
+zillow_housing_data <- read.csv("Data/seattle-wa.csv")
+
+zillow_housing_data$Region.Name <- as.character(zillow_housing_data$Region.Name)
+zillow_housing_data$Region.Name[which(zillow_housing_data$Region.Name == "Mt. Baker")] <- "Mount Baker"
+zillow_housing_data$Region.Name[which(zillow_housing_data$Region.Name == "Ballard")] <- "Adams"
+
+
+cleaned_crime_data$S_HOOD[which(cleaned_crime_data$S_HOOD %in% c("Broadway", "Stevens"))] <- "Capitol Hill"
+cleaned_crime_data$S_HOOD[which(cleaned_crime_data$S_HOOD %in% c("Central Business District", "Pike-Market", "Yesler Terrace"))] <- "Capitol Hill"
+cleaned_crime_data$S_HOOD[which(cleaned_crime_data$S_HOOD %in% c("Atlantic","Harrison/Denny-Blaine","Mann"))] <- "Central"
+cleaned_crime_data$S_HOOD[which(cleaned_crime_data$S_HOOD %in% c("Lawton Park","Briarcliff","Southeast Magnolia"))] <- "Magnolia"
+cleaned_crime_data$S_HOOD[which(cleaned_crime_data$S_HOOD == "Mid-Beacon Hill")] <- "Beacon Hill"
+cleaned_crime_data$S_HOOD[which(cleaned_crime_data$S_HOOD == "North Beach/Blue Ridge")] <- "North Beach"
+
+cleaned_crime_data <- cleaned_crime_data %>%
+                      rename(Neighborhood = S_HOOD)
+zillow_housing_data <-  zillow_housing_data %>% 
+  rename(Neighborhood = Region.Name)
+
 crime_by_neighborhood <- cleaned_crime_data %>%
-  group_by(L_HOOD) %>%
+  group_by(Neighborhood) %>%
   summarise(crime_count = n()) %>%
   arrange(desc(crime_count))
 
+crime_zillow_merged_df <- inner_join(x = cleaned_crime_data, y = zillow_housing_data, by = c("Neighborhood"))
+
+unique_merges <- data_frame(unique(crime_zillow_merged_df$Neighborhood))
