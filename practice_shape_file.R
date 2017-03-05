@@ -59,7 +59,8 @@ zillow_housing_data$Region.Name[which(zillow_housing_data$Region.Name == "Ballar
 
 
 cleaned_crime_data$S_HOOD[which(cleaned_crime_data$S_HOOD %in% c("Broadway", "Stevens"))] <- "Capitol Hill"
-cleaned_crime_data$S_HOOD[which(cleaned_crime_data$S_HOOD %in% c("Central Business District", "Pike-Market", "Yesler Terrace"))] <- "Capitol Hill"
+cleaned_crime_data$S_HOOD[which(cleaned_crime_data$S_HOOD %in% c("Central Business District", "Pike-Market", "Yesler Terrace", 
+                                                                 "Pioneer Square", "International District"))] <- "Downtown"
 cleaned_crime_data$S_HOOD[which(cleaned_crime_data$S_HOOD %in% c("Atlantic","Harrison/Denny-Blaine","Mann"))] <- "Central"
 cleaned_crime_data$S_HOOD[which(cleaned_crime_data$S_HOOD %in% c("Lawton Park","Briarcliff","Southeast Magnolia"))] <- "Magnolia"
 cleaned_crime_data$S_HOOD[which(cleaned_crime_data$S_HOOD == "Mid-Beacon Hill")] <- "Beacon Hill"
@@ -70,11 +71,25 @@ cleaned_crime_data <- cleaned_crime_data %>%
 zillow_housing_data <-  zillow_housing_data %>% 
   rename(Neighborhood = Region.Name)
 
-crime_by_neighborhood <- cleaned_crime_data %>%
-  group_by(Neighborhood) %>%
-  summarise(crime_count = n()) %>%
-  arrange(desc(crime_count))
+
 
 crime_zillow_merged_df <- inner_join(x = cleaned_crime_data, y = zillow_housing_data, by = c("Neighborhood"))
 
+crime_zillow_merged_df <- crime_zillow_merged_df %>%
+                          select(Offense.Code, Offense.Type, Summary.Offense.Code, Summarized.Offense.Description,
+                                 Occurred.Date.or.Date.Range.Start, Zone.Beat, Month, Year, Occurred.Time, 
+                                 Neighborhood, Current)
+
+
 unique_merges <- data_frame(unique(crime_zillow_merged_df$Neighborhood))
+property_value_by_neighborhood <- crime_zillow_merged_df %>%
+                                  select(Neighborhood, Current) %>%
+                                  unique() %>%
+                                  arrange(Current)
+
+crime_by_neighborhood <- crime_zillow_merged_df %>%
+  group_by(Neighborhood) %>%
+  summarise(crime_count = n()) %>%
+  arrange(crime_count)
+
+plot(property_value_by_neighborhood$Current, crime_by_neighborhood$crime_count)
