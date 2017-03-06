@@ -80,16 +80,25 @@ crime_zillow_merged_df <- crime_zillow_merged_df %>%
                                  Occurred.Date.or.Date.Range.Start, Zone.Beat, Month, Year, Occurred.Time, 
                                  Neighborhood, Current)
 
+crime_zillow_merged_df <- crime_zillow_merged_df %>%
+                          rename(Current.Value = Current)
+
+crime_zillow_merged_df$Current.Value <- as.numeric(gsub("\\,", "", 
+                                                          gsub("\\$", "", 
+                                                               crime_zillow_merged_df$Current.Value)), na.rm=TRUE)
+
+#Removing NAs
+crime_zillow_merged_df <- crime_zillow_merged_df %>%
+                            filter(!is.na(crime_zillow_merged_df$Current.Value))
 
 unique_merges <- data_frame(unique(crime_zillow_merged_df$Neighborhood))
 property_value_by_neighborhood <- crime_zillow_merged_df %>%
-                                  select(Neighborhood, Current) %>%
-                                  unique() %>%
-                                  arrange(Current)
+                                  select(Neighborhood, Current.Value) %>%
+                                  arrange(Neighborhood) %>%
+                                  unique()
 
 crime_by_neighborhood <- crime_zillow_merged_df %>%
   group_by(Neighborhood) %>%
   summarise(crime_count = n()) %>%
-  arrange(crime_count)
+  arrange(Neighborhood)
 
-plot(property_value_by_neighborhood$Current, crime_by_neighborhood$crime_count)
