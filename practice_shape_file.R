@@ -102,8 +102,24 @@ crime_by_neighborhood <- crime_zillow_merged_df %>%
   summarise(crime_count = n()) %>%
   arrange(Neighborhood)
 
-plot(x = property_value_by_neighborhood$Current.Value, y = crime_by_neighborhood$crime_count, ylim = c(0,3000))
+library(AUC)
+crime_zillow_merged_df$Indicator <- 0
+crime_zillow_merged_df$Indicator[which(crime_zillow_merged_df$Summary.Offense.Code %in% c(2300))] <- 1
 
-mod <- lm(crime_by_neighborhood$crime_count ~ property_value_by_neighborhood$Current.Value)
-abline(mod)
 
+log.mod <- glm(formula = Indicator ~ Current.Value, family = "binomial", data = crime_zillow_merged_df)
+summary(log.mod)
+
+plot(y = crime_zillow_merged_df$Indicator, x = crime_zillow_merged_df$Current.Value)
+fits <- fitted(log.mod)
+curve(predict(log.mod,data.frame(Current.Value=x),type="resp"),add=TRUE)
+points(crime_zillow_merged_df$Current.Value, fits, pch=20)
+
+blah <- data.frame(Current.Value = c(5000000, 450000))
+
+y <- factor(crime_zillow_merged_df$Indicator)
+rr <- roc(fits, y)
+plot(rr)
+auc(rr)
+#curve(predict(log.mod,data.frame(Current.Value=x),type="resp"),add=TRUE) # draws a curve based on prediction from logistic regression model
+#points(crime_zillow_merged_df$Current.Value,fitted(log.mod),pch=20) # optional: you could skip this draws an invisible set of points of body size survival based on a 'fit' to glm model. pch= changes type of dots.
