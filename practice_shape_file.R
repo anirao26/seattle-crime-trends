@@ -102,3 +102,8 @@ crime_by_neighborhood <- crime_zillow_merged_df %>%
   summarise(crime_count = n()) %>%
   arrange(Neighborhood)
 
+plot(x = property_value_by_neighborhood$Current.Value, y = crime_by_neighborhood$crime_count, ylim = c(0,3000))
+
+mod <- lm(crime_by_neighborhood$crime_count ~ property_value_by_neighborhood$Current.Value)
+abline(mod)
+
