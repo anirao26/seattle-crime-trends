@@ -123,3 +123,8 @@ plot(rr)
 auc(rr)
 #curve(predict(log.mod,data.frame(Current.Value=x),type="resp"),add=TRUE) # draws a curve based on prediction from logistic regression model
 #points(crime_zillow_merged_df$Current.Value,fitted(log.mod),pch=20) # optional: you could skip this draws an invisible set of points of body size survival based on a 'fit' to glm model. pch= changes type of dots.
+
+crime_zillow_merged_df$Property.Status <- "Less than 500k"
+crime_zillow_merged_df$Property.Status[which(crime_zillow_merged_df$Current.Value >= 500000)] <- "Greater than 500k"
+
+barplot(table(crime_zillow_merged_df$Property.Status))
