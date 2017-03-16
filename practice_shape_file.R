@@ -3,6 +3,9 @@ library(maps)
 library(maptools)
 library(rgdal)
 library(dplyr)
+library(ggplot2)
+library(ggmap)
+library(randomForest)
 crime_data <- read.csv("Data/Seattle_Police_Department_Police_Report_Incident.csv")
 cleaned_crime_data <- crime_data %>%
   filter(Year == 2016)
@@ -23,6 +26,9 @@ cleaned_crime_data$Occurred.Time <- substr(x=cleaned_crime_data$Occurred.Date.or
 
 neighborhoods_map <- readOGR(dsn = "Neighborhoods", layer = "Neighborhoods")
 
+cleaned_crime_data$Long <- cleaned_crime_data$Longitude
+cleaned_crime_data$Lat <- cleaned_crime_data$Latitude
+
 #Converting columns Longitude and Latitude into spatial coordinates.
 coordinates(cleaned_crime_data) <- ~Longitude+Latitude
 #spplot(seattle_crime_data)
@@ -32,7 +38,6 @@ proj4string(cleaned_crime_data)<-CRS("+proj=longlat +datum=NAD83")
 cleaned_crime_data <- spTransform(cleaned_crime_data, CRS(proj4string(neighborhoods_map)))
 
 neighborhood_details <- over(cleaned_crime_data, neighborhoods_map)
-
 cleaned_crime_data$L_HOOD <- neighborhood_details$L_HOOD
 cleaned_crime_data$S_HOOD <- neighborhood_details$S_HOOD
 
@@ -77,8 +82,8 @@ crime_zillow_merged_df <- inner_join(x = cleaned_crime_data, y = zillow_housing_
 
 crime_zillow_merged_df <- crime_zillow_merged_df %>%
                           select(Offense.Code, Offense.Type, Summary.Offense.Code, Summarized.Offense.Description,
-                                 Occurred.Date.or.Date.Range.Start, Zone.Beat, Month, Year, Occurred.Time, 
-                                 Neighborhood, Current)
+                                 Occurred.Date.or.Date.Range.Start, Zone.Beat, Location, Month, Year, Occurred.Time, 
+                                 Neighborhood, Current, Long, Lat)
 
 crime_zillow_merged_df <- crime_zillow_merged_df %>%
                           rename(Current.Value = Current)
@@ -104,10 +109,35 @@ crime_by_neighborhood <- crime_zillow_merged_df %>%
 
 library(AUC)
 crime_zillow_merged_df$Indicator <- 0
-crime_zillow_merged_df$Indicator[which(crime_zillow_merged_df$Summary.Offense.Code %in% c(2300))] <- 1
+crime_zillow_merged_df$Indicator[which(crime_zillow_merged_df$Summary.Offense.Code %in% c(2300, 2200, 2400))] <- 1
+set.seed(2)
+train <- sample(1:nrow(crime_zillow_merged_df), 3/4 * nrow(crime_zillow_merged_df))
+test <- -train
+training_data <- crime_zillow_merged_df[train,]
+testing_data <- crime_zillow_merged_df[test,]
+log.mod <- glm(formula = Indicator ~ Current.Value, family = "binomial", data = training_data)
+summary(log.mod)
+
+predicted_Prob <- predict(log.mod, testing_data, type = "response")
+predictedIndicators = rep(0, nrow(testing_data))
+predictedIndicators[predicted_Prob > 0.60] <- 1
+table(predicted = predictedIndicators, actual = testing_data$Indicator)
+mean(predictedIndicators==testing_data$Indicator)
+
+rm(predicted_Prob)
+rm(predictedIndicators)
+
+y <- factor(training_data$Indicator)
+fits <- fitted(log.mod)
+rr <- roc(fits, factor(training_data$Indicator))
+plot(rr)
+auc(rr)
 
 
-log.mod <- glm(formula = Indicator ~ Current.Value, family = "binomial", data = crime_zillow_merged_df)
+
+
+log.mod <- glm(formula = Indicator ~ Current.Value, family = "binomial", 
+               data = crime_zillow_merged_df)
 summary(log.mod)
 
 plot(y = crime_zillow_merged_df$Indicator, x = crime_zillow_merged_df$Current.Value)
@@ -118,13 +148,55 @@ points(crime_zillow_merged_df$Current.Value, fits, pch=20)
 blah <- data.frame(Current.Value = c(5000000, 450000))
 
 y <- factor(crime_zillow_merged_df$Indicator)
+fits <- fitted(log.mod)
 rr <- roc(fits, y)
 plot(rr)
 auc(rr)
 #curve(predict(log.mod,data.frame(Current.Value=x),type="resp"),add=TRUE) # draws a curve based on prediction from logistic regression model
 #points(crime_zillow_merged_df$Current.Value,fitted(log.mod),pch=20) # optional: you could skip this draws an invisible set of points of body size survival based on a 'fit' to glm model. pch= changes type of dots.
 
-crime_zillow_merged_df$Property.Status <- "Less than 500k"
-crime_zillow_merged_df$Property.Status[which(crime_zillow_merged_df$Current.Value >= 500000)] <- "Greater than 500k"
+crime_zillow_merged_df$Property.Status <- "Less than 550k"
+crime_zillow_merged_df$Property.Status[which(crime_zillow_merged_df$Current.Value >= 550000)] <- "Greater than 550k"
 
 barplot(table(crime_zillow_merged_df$Property.Status))
+ggplot(data = crime_zillow_merged_df) + geom_bar(mapping = aes(Property.Status)) +
+  ggtitle("Crime across the two property value categories") +
+  xlab("Property Value Categories") +
+  ylab("Crime Count")
+
+#Random Forest Implementation
+rf_model <- randomForest(Indicator~Current.Value, ntree=20, training_data)
+predicted_Prob <- predict(rf_model, testing_data, type = "response")
+predictedIndicators = rep(0, nrow(testing_data))
+predictedIndicators[predicted_Prob > 0.60] <- 1
+confusion_matrix <- table(predictions = predictedIndicators, actual = testing_data$Indicator)
+mean(predictedIndicators==testing_data$Indicator)
+rm(predicted_Prob)
+rm(predictedIndicators)
+
+fits <- fitted(rf_model)
+rr <- roc(fits, factor(training_data$Indicator))
+plot(rr)
+auc(rr)
+
+importance(rf_model)
+varImpPlot(rf_model)
+
+
+top3_crimes_df <- crime_zillow_merged_df %>%
+  filter(Summary.Offense.Code %in% c(2200, 2300, 2400))
+
+map.seattle_city <- get_map('Seattle', zoom=11, maptype = "roadmap", crop = FALSE)
+ggmap(map.seattle_city) +
+  geom_point(data=top3_crimes_df, aes(x=Long, y=Lat),  color="red", alpha=.03, size=1., pch=21) +
+  ggtitle("Distribution of burglary, theft, and vehicle theft") +
+  xlab("Longitude") +
+  ylab("Latitude")
+
+high_property_areas <- crime_zillow_merged_df %>%
+  filter(Property.Status == "Greater than 550k")
+ggmap(map.seattle_city) +
+  geom_point(data=high_property_areas, aes(x=Long, y=Lat),  color="red", alpha=.03, size=1., pch=21) +
+  ggtitle("Neighborhoods with property value greater than $550000") +
+  xlab("Longitude") +
+  ylab("Latitude")
