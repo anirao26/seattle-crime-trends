@@ -107,6 +107,58 @@ crime_by_neighborhood <- crime_zillow_merged_df %>%
   summarise(crime_count = n()) %>%
   arrange(Neighborhood)
 
+# Reading a new csv file which contains hourly timeslots, such as 3PM-4PM, 4PM-5PM etc. 
+time_zone_data <- read.csv("timeZones2.csv")
+formatted_times <- format(strptime(crime_zillow_merged_df$Occurred.Time, "%I:%M:%S %p"), format = "%H:%M:%S")
+df <- as.data.frame(formatted_times)
+df$formatted_times_numeric <- as.numeric(as.POSIXct(formatted_times, format = "%H:%M:%S"))
+time_zone_data$start_time <- as.POSIXct(as.character(time_zone_data$start_time), format = "%H:%M:%S")
+time_zone_data$end_time <- as.POSIXct(as.character(time_zone_data$end_time), format = "%H:%M:%S")
+
+time_zone_data$start_time_numeric <- as.numeric(time_zone_data$start_time)
+time_zone_data$end_time_numeric <- as.numeric(time_zone_data$end_time)
+
+time_join_df <- sqldf("select * from df
+                      inner join time_zone_data 
+                      on df.formatted_times_numeric >= time_zone_data.start_time_numeric
+                      and df.formatted_times_numeric < time_zone_data.end_time_numeric")
+
+time_join_df_clean <- time_join_df %>%
+  select(formatted_times, periodId, start_time, end_time, Desc)
+
+#creating a new column in the dataframe that contains the hourly timeslots
+crime_zillow_merged_df$time_slots<-time_join_df_clean$Desc
+
+#Creating a new column in the dataframe, such that if an Assault occurred, a 1 is entered in the column for that particular record,
+# and a 0 is entered for all other forms of crime.
+crime_zillow_merged_df$Crime.Response <- rep(0, nrow(crime_zillow_merged_df))
+crime_zillow_merged_df$Crime.Response[crime_zillow_merged_df$Summary.Offense.Code %in% c(1300)] <- 1 #If the Summary.Offense.Code is 
+#1300, which stands for Assault, the Crime.Response column value will be 1.
+
+logmod<-glm(formula = crime_zillow_merged_df$Crime.Response ~ crime_zillow_merged_df$time_slots,  
+            data=crime_zillow_merged_df, family="binomial") #The logistic regression model
+summary(logmod)
+fits_assault<-fitted(logmod)
+tab <- table(crime_zillow_merged_df$Crime.Response, fits_assault>=0.50) #creating the confusion matrix
+tab
+y <- factor(crime_zillow_merged_df$Crime.Response) 
+rr_assault <- roc(fits_assault, y) #The ROC curve
+plot(rr_assault) #Plotting the ROC curve
+auc(rr_assault) #The Area Under the Curve value
+
+#Multiple Logistic Regression model by considering an additional predictor - Neighborhood
+logmod_new<-glm(formula = crime_zillow_merged_df$Crime.Response ~ crime_zillow_merged_df$time_slots + crime_zillow_merged_df$Neighborhood,  
+            data=crime_zillow_merged_df, family="binomial")
+
+summary(logmod_new)
+fits_new<-fitted(logmod_new)
+tab <- table(crime_zillow_merged_df$Crime.Response, fits_new>=0.50) 
+tab # Gives the confusion matrix
+y <- factor(crime_zillow_merged_df$Crime.Response) 
+rr_new <- roc(fits_new, y) # The ROC curve
+plot(rr_new) 
+auc(rr_new) #The area under the ROC curve
+
 library(AUC)
 crime_zillow_merged_df$Indicator <- 0
 crime_zillow_merged_df$Indicator[which(crime_zillow_merged_df$Summary.Offense.Code %in% c(2300, 2200, 2400))] <- 1
