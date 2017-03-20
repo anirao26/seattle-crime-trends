@@ -5,6 +5,7 @@ library(rgdal)
 library(dplyr)
 library(ggplot2)
 library(ggmap)
+library(AUC)
 library(randomForest)
 crime_data <- read.csv("Data/Seattle_Police_Department_Police_Report_Incident.csv")
 cleaned_crime_data <- crime_data %>%
@@ -159,7 +160,7 @@ rr_new <- roc(fits_new, y) # The ROC curve
 plot(rr_new) 
 auc(rr_new) #The area under the ROC curve
 
-library(AUC)
+
 crime_zillow_merged_df$Indicator <- 0
 crime_zillow_merged_df$Indicator[which(crime_zillow_merged_df$Summary.Offense.Code %in% c(2300, 2200, 2400))] <- 1
 set.seed(2)
