@@ -1,3 +1,4 @@
+setwd('/Users/anirudhrao/Documents/Data Science 1/Final Project/seattle-crime-trends-master')
 library(sp)
 library(maps)
 library(maptools)
@@ -7,6 +8,7 @@ library(ggplot2)
 library(ggmap)
 library(AUC)
 library(randomForest)
+library(sqldf)
 crime_data <- read.csv("Data/Seattle_Police_Department_Police_Report_Incident.csv")
 cleaned_crime_data <- crime_data %>%
   filter(Year == 2016)
@@ -73,7 +75,7 @@ cleaned_crime_data$S_HOOD[which(cleaned_crime_data$S_HOOD == "Mid-Beacon Hill")]
 cleaned_crime_data$S_HOOD[which(cleaned_crime_data$S_HOOD == "North Beach/Blue Ridge")] <- "North Beach"
 
 cleaned_crime_data <- cleaned_crime_data %>%
-                      rename(Neighborhood = S_HOOD)
+  rename(Neighborhood = S_HOOD)
 zillow_housing_data <-  zillow_housing_data %>% 
   rename(Neighborhood = Region.Name)
 
@@ -82,31 +84,178 @@ zillow_housing_data <-  zillow_housing_data %>%
 crime_zillow_merged_df <- inner_join(x = cleaned_crime_data, y = zillow_housing_data, by = c("Neighborhood"))
 
 crime_zillow_merged_df <- crime_zillow_merged_df %>%
-                          select(Offense.Code, Offense.Type, Summary.Offense.Code, Summarized.Offense.Description,
-                                 Occurred.Date.or.Date.Range.Start, Zone.Beat, Location, Month, Year, Occurred.Time, 
-                                 Neighborhood, Current, Long, Lat)
+  select(Offense.Code, Offense.Type, Summary.Offense.Code, Summarized.Offense.Description,
+         Occurred.Date.or.Date.Range.Start, Zone.Beat, Location, Month, Year, Occurred.Time, 
+         Neighborhood, Current, Long, Lat)
 
 crime_zillow_merged_df <- crime_zillow_merged_df %>%
-                          rename(Current.Value = Current)
+  rename(Current.Value = Current)
 
 crime_zillow_merged_df$Current.Value <- as.numeric(gsub("\\,", "", 
-                                                          gsub("\\$", "", 
-                                                               crime_zillow_merged_df$Current.Value)), na.rm=TRUE)
+                                                        gsub("\\$", "", 
+                                                             crime_zillow_merged_df$Current.Value)), na.rm=TRUE)
 
 #Removing NAs
 crime_zillow_merged_df <- crime_zillow_merged_df %>%
-                            filter(!is.na(crime_zillow_merged_df$Current.Value))
+  filter(!is.na(crime_zillow_merged_df$Current.Value))
 
 unique_merges <- data_frame(unique(crime_zillow_merged_df$Neighborhood))
 property_value_by_neighborhood <- crime_zillow_merged_df %>%
-                                  select(Neighborhood, Current.Value) %>%
-                                  arrange(Neighborhood) %>%
-                                  unique()
+  select(Neighborhood, Current.Value) %>%
+  arrange(Neighborhood) %>%
+  unique()
 
 crime_by_neighborhood <- crime_zillow_merged_df %>%
   group_by(Neighborhood) %>%
   summarise(crime_count = n()) %>%
   arrange(Neighborhood)
+
+#Analysis of the presence of schools on the incidence of crimes using Linear regression--------
+
+#Reading school data
+school_data <- read.csv("Data/Public_Schools.csv")
+
+#transforming the shape variable into coordinates into separate columns (Latitude, Longitude)
+school_lat_lon_coord_obj <- read.table(text=gsub('[()]', '', school_data$Shape), 
+                                       sep=",", col.names=c('Latitude', 'Longitude'))
+
+school_lat_lon_coord_obj$OBJECTID <- school_data$OBJECTID
+school_data <- merge(school_data, school_lat_lon_coord_obj, by = "OBJECTID")
+
+#converting to a spatial dataframe
+coordinates(school_data) <- ~Longitude+Latitude
+
+proj4string(school_data)<-CRS("+proj=longlat +datum=NAD83")
+school_data <- spTransform(school_data, CRS(proj4string(neighborhoods_map)))
+
+#Projecting onto shape file
+neighborhood_details <- over(school_data, neighborhoods_map)
+
+#Adding columns consistent with the shape file details
+school_data$L_HOOD <- neighborhood_details$L_HOOD
+school_data$S_HOOD <- neighborhood_details$S_HOOD
+school_data <- as.data.frame(school_data)
+
+
+school_data <- school_data %>%
+  rename(Neighborhood = S_HOOD)
+unique(school_data$Neighborhood)
+
+school_data$Neighborhood <- as.character(school_data$Neighborhood)
+
+#Checking for discrepancy. Cleaning up neighborhood data
+school_data$Neighborhood[which(school_data$Neighborhood %in% c("Broadway", "Stevens"))] <- "Capitol Hill"
+school_data$Neighborhood[which(school_data$Neighborhood %in% c("Central Business District", "Pike-Market", "Yesler Terrace", 
+                                                               "Pioneer Square", "International District"))] <- "Downtown"
+school_data$Neighborhood[which(school_data$Neighborhood %in% c("Atlantic","Harrison/Denny-Blaine","Mann"))] <- "Central"
+school_data$Neighborhood[which(school_data$Neighborhood %in% c("Lawton Park","Briarcliff","Southeast Magnolia"))] <- "Magnolia"
+school_data$Neighborhood[which(school_data$Neighborhood == "Mid-Beacon Hill")] <- "Beacon Hill"
+school_data$Neighborhood[which(school_data$Neighborhood == "North Beach/Blue Ridge")] <- "North Beach"
+
+#Joining school data and crime data by neighborhood
+crime_by_school_area <- inner_join(x= school_data, y = cleaned_crime_data, by = c("Neighborhood"))
+
+#Joining above dataset with the Zillow property values dataset
+property_value_by_school_area <- inner_join(x= crime_by_school_area,y = property_value_by_neighborhood, by = c("Neighborhood"))
+
+property_value_by_school_area$Neighborhood
+
+area_wise_property <- property_value_by_school_area %>%
+  group_by(Neighborhood) %>%
+  select(Current.Value, Neighborhood) %>%
+  unique() %>%
+  arrange(Neighborhood)
+
+school_per_area <- school_data %>%
+  group_by(Neighborhood) %>%
+  summarise(count_school = n())
+
+area_wise_school_crime <- crime_by_school_area %>%
+  group_by(Neighborhood) %>%
+  summarise(count_crime = n()) 
+
+#Checking for mismatches in neighborhood wise school count and crime count
+anti_join(school_per_area, area_wise_school_crime, by = c("Neighborhood"))
+
+#merging
+area_wise_school_crime$Total_Schools <- school_per_area$count_school
+
+#Repeating the merge process for the top 3 crimes 
+area_wise_school_crime_2300 <- crime_by_school_area %>%
+  filter(Summary.Offense.Code == 2300) %>%
+  group_by(Neighborhood) %>%
+  summarise(count_crime = n()) 
+area_wise_school_crime_2300$Total_Schools <- school_per_area$count_school
+
+area_wise_school_crime_2200 <- crime_by_school_area %>%
+  filter(Summary.Offense.Code == 2200) %>%
+  group_by(Neighborhood) %>%
+  summarise(count_crime = n()) 
+area_wise_school_crime_2200$Total_Schools <- school_per_area$count_school
+
+area_wise_school_crime_2400 <- crime_by_school_area %>%
+  filter(Summary.Offense.Code == 2400) %>%
+  group_by(Neighborhood) %>%
+  summarise(count_crime = n()) 
+area_wise_school_crime_2400$Total_Schools <- school_per_area$count_school
+
+
+#Building the linear regression models for all crimes and school count by neighborhoods
+mod <- lm(area_wise_school_crime$count_crime ~ area_wise_school_crime$Total_Schools)
+
+#Checking for statistical significance
+summary(mod)
+
+#Visualizing the linear relationship
+ggplot(area_wise_school_crime, aes(x = Total_Schools, y = count_crime)) + 
+  geom_point() +
+  stat_smooth(method = "lm", col = "blue") +
+  xlab("Total number of schools") +
+  ylab("Total number of crimes") +
+  ggtitle("Number of schools vs Total crimes")
+
+#Building the linear regression models for top 3 crimes and school count by neighborhoods
+
+mod_2200 <- lm(area_wise_school_crime_2200$count_crime ~ area_wise_school_crime_2200$Total_Schools)
+summary(mod_2200)
+
+mod_2300 <- lm(area_wise_school_crime_2300$count_crime ~ area_wise_school_crime_2300$Total_Schools)
+summary(mod_2300)
+
+mod_2400 <- lm(area_wise_school_crime_2400$count_crime ~ area_wise_school_crime_2400$Total_Schools)
+summary(mod_2400)
+
+
+#Multiple regression model
+
+#Checking for mismatches in neighborhood names
+anti_join(area_wise_school_crime, area_wise_property, by = c("Neighborhood"))
+
+#Analyzing only matched neighborhoods
+
+area_wise_school_crime_ml <- crime_by_school_area %>%
+  filter(!(Neighborhood %in% c("Industrial District", "North Admiral"))) %>%
+  group_by(Neighborhood) %>%
+  summarise(count_crime = n())
+
+school_per_area_ml <- school_data %>%
+  filter(!is.na(school_data$Neighborhood) & !(Neighborhood %in% c("Industrial District", "North Admiral"))) %>%
+  group_by(Neighborhood) %>%
+  summarise(count_school = n())
+
+ml_school_propertyValueObj <- inner_join(x= area_wise_school_crime_ml, y = area_wise_property, by = c("Neighborhood"))
+ml_school_propertyValueObj <- inner_join(x= ml_school_propertyValueObj,y = school_per_area_ml, by = c("Neighborhood"))
+
+#Converting the property values from charaters to numbers
+ml_school_propertyValueObj$Current <- as.numeric(gsub("\\,", "", gsub("\\$", "", ml_school_propertyValueObj$Current.Value)), na.rm=TRUE)
+
+#Building the ML model with property values
+mod_property_crime_school <- lm(ml_school_propertyValueObj$count_crime ~ ml_school_propertyValueObj$Current + ml_school_propertyValueObj$count_school)
+
+#Checking for statistical significance
+summary(mod_property_crime_school)
+
+#----------------------------------------End of School data analysis-------------------------------------
 
 # Reading a new csv file which contains hourly timeslots, such as 3PM-4PM, 4PM-5PM etc. 
 time_zone_data <- read.csv("timeZones2.csv")
@@ -149,7 +298,7 @@ auc(rr_assault) #The Area Under the Curve value
 
 #Multiple Logistic Regression model by considering an additional predictor - Neighborhood
 logmod_new<-glm(formula = crime_zillow_merged_df$Crime.Response ~ crime_zillow_merged_df$time_slots + crime_zillow_merged_df$Neighborhood,  
-            data=crime_zillow_merged_df, family="binomial")
+                data=crime_zillow_merged_df, family="binomial")
 
 summary(logmod_new)
 fits_new<-fitted(logmod_new)
