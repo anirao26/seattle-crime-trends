@@ -1,4 +1,3 @@
-setwd('/Users/anirudhrao/Documents/Data Science 1/Final Project/seattle-crime-trends-master')
 library(sp)
 library(maps)
 library(maptools)
